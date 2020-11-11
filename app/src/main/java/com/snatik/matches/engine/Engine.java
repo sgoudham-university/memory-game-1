@@ -6,6 +6,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.snatik.matches.R;
@@ -45,6 +46,8 @@ public class Engine extends EventObserverAdapter {
 	private Game mPlayingGame = null;
 	private int mFlippedId = -1;
 	private int mToFlip = -1;
+	private int flipAttempts = 0;
+	private int perfectMatches = 0;
 	private ScreenController mScreenController;
 	private Theme mSelectedTheme;
 	private ImageView mBackgroundImage;
@@ -188,13 +191,16 @@ public class Engine extends EventObserverAdapter {
 		}
 		// shuffle
 		// result {4,10,2,39,...}
+
+		// TODO: TO REMOVE THE RANDOM ELEMENT OF THE GAME. COMMENT OUT COLLECTIONS.SHUFFLE(ids)
 		Collections.shuffle(ids);
 
 		// place the board
 		List<String> tileImageUrls = mPlayingGame.theme.tileImageUrls;
+		// TODO: TO REMOVE THE RANDOM ELEMENT OF THE GAME. COMMENT OUT COLLECTIONS.SHUFFLE(tileImageUrls)
 		Collections.shuffle(tileImageUrls);
-		boardArrangment.pairs = new HashMap<Integer, Integer>();
-		boardArrangment.tileUrls = new HashMap<Integer, String>();
+		boardArrangment.pairs = new HashMap<>();
+		boardArrangment.tileUrls = new HashMap<>();
 		int j = 0;
 		for (int i = 0; i < ids.size(); i++) {
 			if (i + 1 < ids.size()) {
@@ -215,14 +221,22 @@ public class Engine extends EventObserverAdapter {
 
 	@Override
 	public void onEvent(FlipCardEvent event) {
-		// Log.i("my_tag", "Flip: " + event.id);
+		Log.i("my_tag", "Flip: " + event.id);
 		int id = event.id;
 		if (mFlippedId == -1) {
 			mFlippedId = id;
-			// Log.i("my_tag", "Flip: mFlippedId: " + event.id);
+			Log.i("my_tag", "Flip: mFlippedId: " + event.id);
 		} else {
+			// TODO: THIS CODE LOGS THE NUMBER OF ATTEMPTS THAT THE USER MAKES TO GET A PERFECT MATCH
+			flipAttempts++;
+			Log.i("my_tag", "Flip: Number Of Times Flipped " + flipAttempts);
+
 			if (mPlayingGame.boardArrangment.isPair(mFlippedId, id)) {
-				// Log.i("my_tag", "Flip: is pair: " + mFlippedId + ", " + id);
+				// TODO: THIS CODE LOGS THE NUMBER OF PERFECT MATCHES THAT THE USER MAKES
+				perfectMatches++;
+				Log.i("my_tag", "Flip: Perfect Matches " + perfectMatches);
+
+				Log.i("my_tag", "Flip: is pair: " + mFlippedId + ", " + id);
 				// send event - hide id1, id2
 				Shared.eventBus.notify(new HidePairCardsEvent(mFlippedId, id), 1000);
 				// play music
@@ -231,6 +245,8 @@ public class Engine extends EventObserverAdapter {
 					@Override
 					public void run() {
 						Music.playCorrent();
+						// TODO: TO BREAK THE PROGRAM, UNCOMMENT OUT SYS.EXIT(0)
+						// System.exit(0);
 					}
 				}, 1000);
 				mToFlip -= 2;
@@ -243,6 +259,24 @@ public class Engine extends EventObserverAdapter {
 					// remained seconds
 					gameState.remainedSeconds = totalTime - passedSeconds;
 					gameState.passedSeconds = passedSeconds;
+
+					// TODO: COMMENT OUT THIS IF STATEMENT TO MAKE IT IMPOSSIBLE FOR THE PLAYER TO GET LESS THAN 2 STARS
+//					if (passedSeconds <= totalTime / 2)
+//						gameState.achievedStars = 3;
+//					else
+//						gameState.achievedStars = 2;
+
+					// calc stars
+					// TODO: COMMENT OUT THIS IF YOU WANT TO MAKE IT HARDER FOR THE PLAYER TO GET 3 STARS
+//					if (passedSeconds <= totalTime / 5) {
+//						gameState.achievedStars = 3;
+//					} else if (passedSeconds <= totalTime - totalTime / 5) {
+//						gameState.achievedStars = 2;
+//					} else if (passedSeconds < totalTime) {
+//						gameState.achievedStars = 1;
+//					} else {
+//						gameState.achievedStars = 0;
+//					}
 
 					// calc stars
 					if (passedSeconds <= totalTime / 2) {
@@ -267,13 +301,19 @@ public class Engine extends EventObserverAdapter {
 					Shared.eventBus.notify(new GameWonEvent(gameState), 1200);
 				}
 			} else {
-				// Log.i("my_tag", "Flip: all down");
+				Log.i("my_tag", "Flip: all down");
 				// send event - flip all down
 				Shared.eventBus.notify(new FlipDownCardsEvent(), 1000);
 			}
 			mFlippedId = -1;
-			// Log.i("my_tag", "Flip: mFlippedId: " + mFlippedId);
+			Log.i("my_tag", "Flip: mFlippedId: " + mFlippedId);
 		}
+//		try {
+//			Thread.sleep(1000);
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		}
+//		System.exit(0);
 	}
 
 	public Game getActiveGame() {
